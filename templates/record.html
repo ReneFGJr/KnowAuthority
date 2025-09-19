@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Detalhe do Registro{% endblock %}
+{% block content %}
+<h2>Registro {{ record.id }}</h2>
+<ul class="list-group">
+  <li class="list-group-item"><strong>OAI Identifier:</strong> {{ record.oai_identifier }}</li>
+  <li class="list-group-item"><strong>Datestamp:</strong> {{ record.datestamp }}</li>
+  <li class="list-group-item"><strong>SetSpec:</strong> {{ record.setSpec }}</li>
+  <li class="list-group-item"><strong>Deleted:</strong> {{ record.deleted }}</li>
+</ul>
+<a href="/records" class="btn btn-secondary mt-3">Voltar</a>
+{% endblock %}{% extends "base.html" %}
+{% block title %}Detalhe do Registro{% endblock %}
+{% block content %}
+<h2>Registro {{ record.id }}</h2>
+<ul class="list-group">
+  <li class="list-group-item"><strong>OAI Identifier:</strong> {{ record.oai_identifier }}</li>
+  <li class="list-group-item"><strong>Datestamp:</strong> {{ record.datestamp }}</li>
+  <li class="list-group-item"><strong>SetSpec:</strong> {{ record.setSpec }}</li>
+  <li class="list-group-item"><strong>Deleted:</strong> {{ record.deleted }}</li>
+</ul>
+<a href="/records" class="btn btn-secondary mt-3">Voltar</a>
+{% endblock %}

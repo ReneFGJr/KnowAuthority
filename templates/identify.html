@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Identify{% endblock %}
+{% block content %}
+<h2>Informações do Repositório</h2>
+<table class="table table-bordered table-striped">
+  <thead class="table-dark">
+    <tr>
+      <th>Repositório</th>
+      <th>Base URL</th>
+      <th>Versão</th>
+      <th>Email</th>
+      <th>Datestamp</th>
+      <th>Deleted</th>
+      <th>Granularity</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in identify %}
+    <tr>
+      <td>{{ row.repository_name }}</td>
+      <td>{{ row.base_url }}</td>
+      <td>{{ row.protocol_version }}</td>
+      <td>{{ row.admin_email }}</td>
+      <td>{{ row.earliest_datestamp }}</td>
+      <td>{{ row.deleted_record }}</td>
+      <td>{{ row.granularity }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

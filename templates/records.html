@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Records{% endblock %}
+{% block content %}
+<h2>Registros (primeiros 50)</h2>
+<table class="table table-hover">
+  <thead class="table-dark">
+    <tr>
+      <th>ID</th>
+      <th>OAI Identifier</th>
+      <th>Datestamp</th>
+      <th>SetSpec</th>
+      <th>Deleted</th>
+      <th>Ação</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for rec in records %}
+    <tr>
+      <td>{{ rec.id }}</td>
+      <td>{{ rec.oai_identifier }}</td>
+      <td>{{ rec.datestamp }}</td>
+      <td>{{ rec.setSpec }}</td>
+      <td>{{ rec.deleted }}</td>
+      <td><a href="/records/{{ rec.id }}" class="btn btn-sm btn-primary">Ver</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
