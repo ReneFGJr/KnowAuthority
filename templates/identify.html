@@ -12,6 +12,7 @@
       <th>Datestamp</th>
       <th>Deleted</th>
       <th>Granularity</th>
+      <th>AC</th>
     </tr>
   </thead>
   <tbody>
@@ -24,6 +25,11 @@
       <td>{{ row.earliest_datestamp }}</td>
       <td>{{ row.deleted_record }}</td>
       <td>{{ row.granularity }}</td>
+      <td>
+        <a href="{{ url_for('getIdentify', repo_id=row.id) }}" class="btn btn-outline-secondary btn-sm" title="Atualizar">
+          <i class="bi bi-arrow-clockwise"></i>
+        </a>
+      </td>
     </tr>
     {% endfor %}
   </tbody>

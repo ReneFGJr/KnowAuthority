@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Identify{% endblock %}
+{% block content %}
+<h2>Informações do Repositório</h2>
+
+<table class="table table-bordered table-striped">
+  <tbody>
+    {% for key, value in repo.items() %}
+    <tr>
+      <th class="text-end" style="width: 30%;">{{ key | replace("_", " ") | capitalize }}</th>
+      <td>{{ value if value else "-" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

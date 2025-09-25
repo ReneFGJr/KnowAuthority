@@ -1,9 +1,13 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+
 import mysql.connector
 
 import database
+import oai_identify
 
 app = Flask(__name__)
+app.secret_key = "minha_chave_super_secreta"  # NECESSÁRIO para usar flash
+
 
 # Configuração do banco
 db_config = database.config()
@@ -21,22 +25,35 @@ def home():
 @app.route("/url", methods=["GET", "POST"])
 def url_form():
     if request.method == "POST":
-        url = request.form.get("base_url")
-        repo = request.form.get("repository_name")
+        url = request.form.get("base_url") or ""
+        repo = request.form.get("repository_name") or ""
 
-        # grava no banco
+        # --- 1. Sanitiza a URL (remove query params ? e &)
+        url = url.split("?")[0].split("&")[0].strip()
+
         conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO oai_identify (repository_name, base_url) VALUES (%s, %s)",
-            (repo, url))
-        conn.commit()
-        conn.close()
+        cursor = conn.cursor(dictionary=True)
 
-        flash("Repositório adicionado com sucesso!", "success")
+        # --- 2. Verifica se já existe essa URL
+        cursor.execute("SELECT id FROM oai_identify WHERE base_url = %s", (url,))
+        existing = cursor.fetchone()
+
+        if existing:
+            flash("⚠️ Essa URL já está cadastrada!", "warning")
+        else:
+            # --- 3. Insere no banco
+            cursor.execute(
+                "INSERT INTO oai_identify (repository_name, base_url) VALUES (%s, %s)",
+                (repo, url)
+            )
+            conn.commit()
+            flash("✅ Repositório adicionado com sucesso!", "success")
+
+        conn.close()
         return redirect(url_for("identify"))
 
     return render_template("url.html")
+
 
 @app.route("/identify")
 def identify():
@@ -46,6 +63,24 @@ def identify():
     data = cursor.fetchall()
     conn.close()
     return render_template("identify.html", identify=data)
+
+@app.route("/identify/<int:repo_id>")
+def getIdentify(repo_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM oai_identify WHERE id = %s", (repo_id,))
+    data = cursor.fetchone()
+
+    if data and not data.get("repository_name"):
+        # agora usa a função update_identify
+        oai_identify.update_identify(data)
+
+        # recarrega os dados já atualizados
+        cursor.execute("SELECT * FROM oai_identify WHERE id = %s", (repo_id,))
+        data = cursor.fetchone()
+
+    conn.close()
+    return render_template("identify_detail.html", repo=data)
 
 
 @app.route("/records")
