@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}ListSets{% endblock %}
+{% block content %}
+<h2>Repositório</h2>
+<table class="table table-bordered">
+  <tr><th>Nome</th><td>{{ repo.repository_name }}</td></tr>
+  <tr><th>Base URL</th><td>{{ repo.base_url }}</td></tr>
+</table>
+
+<h2>Sets</h2>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Spec</th>
+      <th>Name</th>
+      <th>Descrição</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in sets %}
+    <tr>
+      <td>{{ row.set_spec }}</td>
+      <td>{{ row.set_name }}</td>
+      <td>{{ row.set_description|safe }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

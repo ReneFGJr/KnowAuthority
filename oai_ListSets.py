@@ -5,7 +5,7 @@ import mysql.connector
 import database
 
 
-def coletar_list_sets(base_url, identify_id, mysql_config):
+def coletar_list_sets(base_url, identify_id, mysql_config=database.config()):
     """
     Coleta os conjuntos (sets) de um endpoint OAI-PMH e armazena no MySQL.
 
@@ -16,7 +16,7 @@ def coletar_list_sets(base_url, identify_id, mysql_config):
 
     # Conectar ao banco
     conn = mysql.connector.connect(**mysql_config)
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
 
     # Criar tabela de sets se não existir
     cursor.execute("""
@@ -26,7 +26,8 @@ def coletar_list_sets(base_url, identify_id, mysql_config):
             set_spec VARCHAR(255),
             set_name TEXT,
             set_description TEXT,
-            FOREIGN KEY (identify_id) REFERENCES oai_identify(id)
+            FOREIGN KEY (identify_id) REFERENCES oai_identify(id),
+            UNIQUE KEY uniq_identify_spec (identify_id, set_spec) -- 🔑 garante unicidade
         )
     """)
 
@@ -41,28 +42,38 @@ def coletar_list_sets(base_url, identify_id, mysql_config):
     ns = {"oai": "http://www.openarchives.org/OAI/2.0/"}
 
     for set_elem in root.findall(".//oai:set", ns):
-        set_spec = set_elem.find("oai:setSpec", ns).text if set_elem.find(
-            "oai:setSpec", ns) is not None else None
-        set_name = set_elem.find("oai:setName", ns).text if set_elem.find(
-            "oai:setName", ns) is not None else None
+        set_spec = set_elem.find("oai:setSpec", ns).text if set_elem.find("oai:setSpec", ns) is not None else None
+        set_name = set_elem.find("oai:setName", ns).text if set_elem.find("oai:setName", ns) is not None else None
         set_desc = None
 
         desc_elem = set_elem.find("oai:setDescription", ns)
         if desc_elem is not None:
             set_desc = ET.tostring(desc_elem, encoding="unicode")
 
-        # Inserir no banco
+        # --- Verificar se já existe antes de inserir
         cursor.execute(
-            """
-            INSERT INTO oai_sets (identify_id, set_spec, set_name, set_description)
-            VALUES (%s, %s, %s, %s)
-        """, (identify_id, set_spec, set_name, set_desc))
+            "SELECT id FROM oai_sets WHERE identify_id = %s AND set_spec = %s",
+            (identify_id, set_spec)
+        )
+        existing = cursor.fetchone()
 
-        conn.commit()
+        if existing:
+            print(f"Set {set_spec} já existe para identify_id {identify_id}, não inserido.")
+        else:
+            cursor.execute(
+                """
+                INSERT INTO oai_sets (identify_id, set_spec, set_name, set_description)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (identify_id, set_spec, set_name, set_desc)
+            )
+            conn.commit()
+            print(f"Set {set_spec} inserido com sucesso para identify_id {identify_id}.")
 
     cursor.close()
     conn.close()
-    print("Conjuntos armazenados com sucesso!")
+    print("Coleta de conjuntos concluída.")
+
 
 
 # Exemplo de uso
