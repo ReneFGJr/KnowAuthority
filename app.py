@@ -6,6 +6,7 @@ import database
 import oai_ListSets
 import oai_identify
 import oai_listRecords
+import oai_listIdentifiers
 
 app = Flask(__name__)
 app.secret_key = "minha_chave_super_secreta"  # NECESSÁRIO para usar flash
@@ -22,6 +23,26 @@ def get_connection():
 @app.route("/")
 def home():
     return render_template("home.html")
+
+
+@app.route("/listidentifiers/<int:repo_id>")
+def getListIdentifiers(repo_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM oai_identify WHERE id = %s", (repo_id, ))
+    repo = cursor.fetchone()
+    conn.close()
+
+    if not repo:
+        return jsonify({"error": "Repositório não encontrado"}), 404
+
+    base_url = repo.get("base_url")
+    try:
+        count = oai_listIdentifiers.coletar_identificadores(base_url, repo_id)
+        return jsonify({"status": "ok", "saved": count})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 @app.route("/url", methods=["GET", "POST"])
