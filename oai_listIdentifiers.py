@@ -7,6 +7,42 @@ import database
 NS = {"oai": "http://www.openarchives.org/OAI/2.0/"}
 
 
+def coletar_identificadores_stream(base_url, identify_id):
+    conn = mysql.connector.connect(**database.config())
+    cursor = conn.cursor()
+
+    params = {"verb": "ListIdentifiers", "metadataPrefix": "oai_dc"}
+    total = 0
+
+    while True:
+        resp = requests.get(base_url, params=params, timeout=30)
+        root = ET.fromstring(resp.text)
+
+        for header in root.findall(".//oai:header", NS):
+            oai_id = header.find("oai:identifier", NS).text
+            cursor.execute(
+                """
+                INSERT IGNORE INTO oai_records (repository, oai_identifier)
+                VALUES (%s, %s)
+            """, (identify_id, oai_id))
+            total += 1
+            if total % 1000 == 0:
+                yield f". "
+
+        token = root.find(".//oai:resumptionToken", NS)
+        if token is not None and token.text:
+            params = {
+                "verb": "ListIdentifiers",
+                "resumptionToken": token.text.strip()
+            }
+        else:
+            break
+
+    conn.commit()
+    conn.close()
+
+
+
 def coletar_identificadores(base_url, identify_id):
     conn = mysql.connector.connect(**database.config())
     cursor = conn.cursor()

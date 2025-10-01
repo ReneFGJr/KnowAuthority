@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash,  Response, stream_with_context
 
 import mysql.connector
 
@@ -26,7 +26,7 @@ def home():
 
 
 @app.route("/listidentifiers/<int:repo_id>")
-def getListIdentifiers(repo_id):
+def getListIdentifiersStream(repo_id):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM oai_identify WHERE id = %s", (repo_id, ))
@@ -34,14 +34,22 @@ def getListIdentifiers(repo_id):
     conn.close()
 
     if not repo:
-        return jsonify({"error": "Repositório não encontrado"}), 404
+        return "Repositório não encontrado", 404
 
     base_url = repo.get("base_url")
-    try:
-        count = oai_listIdentifiers.coletar_identificadores(base_url, repo_id)
-        return jsonify({"status": "ok", "saved": count})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+
+    def generate():
+        yield "data: Iniciando coleta...\n\n"
+        try:
+            for status in oai_listIdentifiers.coletar_identificadores_stream(
+                    base_url, repo_id):
+                yield f"{status}"
+            yield "data: ✅ Concluído!\n\n"
+        except Exception as e:
+            yield f"data: ❌ Erro: {str(e)}\n\n"
+
+    return Response(stream_with_context(generate()),
+                    mimetype="text/event-stream")
 
 
 
