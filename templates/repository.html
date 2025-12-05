@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Repositório - {{ repo.repository_name or "Sem Nome" }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3 text-primary">
+        <i class="bi bi-hdd-stack"></i>
+        Repositório: {{ repo.repository_name or "Sem Nome" }} (ID: {{ repo.id }})
+    </h2>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <p><strong>Base URL:</strong> {{ repo.base_url }}</p>
+            <p><strong>Registro criado em:</strong> {{ repo.created_at or "N/A" }}</p>
+            <p><strong>Última atualização:</strong> {{ repo.updated_at or "N/A" }}</p>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

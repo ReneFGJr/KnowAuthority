@@ -1,8 +1,10 @@
+import sys
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash,  Response, stream_with_context
 
 import mysql.connector
 
 import database
+import mod_summarize
 import oai_ListSets
 import oai_identify
 import oai_listRecords
@@ -25,6 +27,51 @@ def home():
     return render_template("home.html")
 
 
+@app.route("/view_set_detail/<int:repo_id>")
+def view_set_detail(repo_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM oai_sets WHERE id = %s", (repo_id, ))
+    set_detail = cursor.fetchone()
+    conn.close()
+
+    if not set_detail:
+        return "Set não encontrado", 404
+
+    return render_template("set_detail.html", set=set_detail)
+
+@app.route("/repository/<int:repo_id>")
+def repositoryView(repo_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM oai_identify WHERE id = %s ", (repo_id, ))
+    repo = cursor.fetchone()
+    conn.close()
+
+    if not repo:
+        return "Repositório não encontrado", 404
+
+    # usa cache
+    record_count = mod_summarize.get_indicator(
+        repo_id, "records",
+        "SELECT COUNT(*) AS total FROM oai_records WHERE repository = %s")
+    set_count = mod_summarize.get_indicator(
+        repo_id, "sets",
+        "SELECT COUNT(*) AS total FROM oai_sets WHERE identify_id = %s")
+
+    print(set_count, file=sys.stderr)
+
+    repo['record_count'] = record_count
+    repo['set_count'] = set_count
+
+    html = render_template("repository.html",
+                           repo=repo,
+                           record_count=record_count,
+                           set_count=set_count)
+    html += oai_ListSets.summary(repo_id)
+    return html
+
+
 @app.route("/listidentifiers/<int:repo_id>")
 def getListIdentifiersStream(repo_id):
     conn = get_connection()
@@ -45,6 +92,7 @@ def getListIdentifiersStream(repo_id):
                     base_url, repo_id):
                 yield f"{status}"
             yield "data: ✅ Concluído!\n\n"
+            yield f'<a href="/repository/{repo_id}">Voltar</a>'
         except Exception as e:
             yield f"data: ❌ Erro: {str(e)}\n\n"
 

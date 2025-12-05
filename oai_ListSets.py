@@ -1,9 +1,28 @@
 import requests
 import xml.etree.ElementTree as ET
-import mysql.connector
+import mysql.connector, database
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+
 
 import database
 
+
+def summary(repo_id):
+    mysql_config = database.config()
+    conn = mysql.connector.connect(**mysql_config)
+    cursor = conn.cursor(dictionary=True)
+
+    # busca informações do repositório
+    cursor.execute("SELECT * FROM oai_identify WHERE id = %s", (repo_id,))
+    repo = cursor.fetchone()
+
+    # busca sets vinculados
+    cursor.execute("SELECT * FROM oai_sets WHERE identify_id = %s  order by set_name", (repo_id,))
+    sets = cursor.fetchall()
+
+    conn.close()
+
+    return render_template("sets.html", repo=repo, sets=sets)
 
 def coletar_list_sets(base_url, identify_id, mysql_config=database.config()):
     """
